@@ -23,9 +23,7 @@ def initial_temperature() -> np.ndarray:
     x_grid, y_grid = np.meshgrid(x_positions, y_positions, indexing="xy")
 
     distance_squared = x_grid**2 + y_grid**2
-    return AMBIENT_TEMPERATURE_C + HOT_SPOT_RISE_C * np.exp(
-        -distance_squared / (2.0 * HOT_SPOT_WIDTH_M**2)
-    )
+    return AMBIENT_TEMPERATURE_C + HOT_SPOT_RISE_C * np.exp(-distance_squared / (2.0 * HOT_SPOT_WIDTH_M**2))
 
 
 def calculate_plate() -> tuple[np.ndarray, np.ndarray, np.ndarray]:

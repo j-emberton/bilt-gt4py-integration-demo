@@ -17,16 +17,8 @@ def test_initial_steel_plate_heat_flow() -> None:
     temperature, rate_c_per_s, updated = calculate_plate()
 
     # The model stores the array in (y, x) order; x therefore uses axis 1.
-    x_curvature = (
-        np.roll(temperature, 1, axis=1)
-        - 2.0 * temperature
-        + np.roll(temperature, -1, axis=1)
-    ) / DX_M**2
-    y_curvature = (
-        np.roll(temperature, 1, axis=0)
-        - 2.0 * temperature
-        + np.roll(temperature, -1, axis=0)
-    ) / DY_M**2
+    x_curvature = (np.roll(temperature, 1, axis=1) - 2.0 * temperature + np.roll(temperature, -1, axis=1)) / DX_M**2
+    y_curvature = (np.roll(temperature, 1, axis=0) - 2.0 * temperature + np.roll(temperature, -1, axis=0)) / DY_M**2
     expected_rate = STEEL_DIFFUSIVITY_M2_PER_S * (x_curvature + y_curvature)
 
     assert temperature.shape == (GRID_POINTS, GRID_POINTS)
