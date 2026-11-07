@@ -202,7 +202,7 @@ def generate_gif() -> bytes:
     output.extend(_palette())
     output.extend(b"\\x21\\xff\\x0bNETSCAPE2.0\\x03\\x01\\x00\\x00\\x00")
     for step, field in enumerate(fields):
-        data = _compress(_frame(field, step * STEPS_PER_FRAME * TIME_STEP_S))
+        data = _compress(_frame(field, int(step * STEPS_PER_FRAME * TIME_STEP_S)))
         output.extend(b"\\x21\\xf9\\x04\\x00")
         output.extend(struct.pack("<H", 55))
         output.extend(b"\\x00\\x00\\x2c")
