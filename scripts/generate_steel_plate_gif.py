@@ -26,7 +26,7 @@ BITS_PER_BYTE = 8
 MAX_CODES = 4096
 MAX_CODE_WIDTH = 12
 PALETTE_STOPS = ((19, 36, 83), (27, 101, 163), (45, 181, 191), (248, 212, 84), (190, 50, 44))
-GLYPHS = dict(
+GLYPHS: dict[str, str] = dict(
     zip(
         "0123456789TS=CHEAPL ",
         [
