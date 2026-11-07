@@ -87,3 +87,22 @@ def test_plate_rejects_relative_temperature_as_absolute_reading() -> None:
     temperature = initial_temperature()
     with pytest.raises(BiltInputDimensionalityError, match="'temperature'"):
         HeatPlate(temperature=tensor(temperature, over=(y, x), unit=kelvin))
+
+
+def test_repeated_bilt_gt4py_steps_match_reference() -> None:
+    """Check multiple model-driven updates against an independent NumPy reference."""
+    from scripts.generate_steel_plate_gif import simulate_fields  # noqa: PLC0415
+
+    frames = simulate_fields(frame_count=3, steps_per_frame=2)
+    expected = initial_temperature()
+    assert len(frames) == 3
+    np.testing.assert_allclose(frames[0], expected)
+
+    for output in frames[1:]:
+        for _ in range(2):
+            curvature_x = (np.roll(expected, 1, axis=1) - 2.0 * expected + np.roll(expected, -1, axis=1)) / DX_M**2
+            curvature_y = (np.roll(expected, 1, axis=0) - 2.0 * expected + np.roll(expected, -1, axis=0)) / DY_M**2
+            expected = expected + TIME_STEP_S * STEEL_DIFFUSIVITY_M2_PER_S * (curvature_x + curvature_y)
+        np.testing.assert_allclose(output, expected, rtol=1e-11, atol=1e-9)
+        assert np.mean(output) == pytest.approx(np.mean(frames[0]), abs=1e-9)
+    assert frames[-1][GRID_POINTS // 2, GRID_POINTS // 2] < frames[0][GRID_POINTS // 2, GRID_POINTS // 2]
