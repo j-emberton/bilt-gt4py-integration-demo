@@ -60,10 +60,7 @@ def test_grid_rejects_time_as_spacing() -> None:
 @pytest.mark.parametrize("field_kind", ["uniform", "random"])
 def test_full_field_laplacian_matches_numpy(field_kind: str, reverse_axes: bool) -> None:
     """Compare all cells, including boundaries, for uniform and spatially varying fields."""
-    if field_kind == "uniform":
-        values = np.full((7, 5), 17.0)
-    else:
-        values = np.random.default_rng(2026).standard_normal((7, 5))
+    values = np.full((7, 5), 17.0) if field_kind == "uniform" else np.random.default_rng(2026).standard_normal((7, 5))
 
     dimensions = (y, x) if reverse_axes else (x, y)
     ordered_values = values.T if reverse_axes else values
