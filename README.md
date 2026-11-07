@@ -40,6 +40,31 @@ We deliberately use different grid spacings, **dx = 2** and **dy = 1**. A unit i
 
 The spacing matters: the contributions along x are divided by 4, while those along y are divided by 1. The tests also put the nonzero cell at a corner to check the **periodic boundary condition**: neighbours beyond one edge wrap around to the opposite edge.
 
+## A physical example: heat spreading through a steel plate
+
+The impulse test is deliberately simple, but what happens when *every cell* has a temperature? [`steel_plate_example.py`](steel_plate_example.py) uses a smooth, localised warm spot in an otherwise cool, thin steel plate.
+
+The assumptions are modest: two-dimensional conduction, a uniform material, no heat loss to the surroundings during this initial instant, and a representative steel thermal diffusivity of **1.2 × 10⁻⁵ m²/s** (actual values vary with grade and temperature).
+
+- The plate starts near **20 °C**, with a Gaussian warm spot reaching **80 °C** in the centre.
+- The computational grid has **81 × 81 cells**, with **6 mm spacing in x** and **8 mm in y**. These unequal physical spacings also exercise the axis-dependent stencil coefficients.
+- Bilt supplies the temperature and grid spacing, and resolves the grid subsystem's inverse-squared spacings. GT4Py evaluates the **Laplacian at every cell**.
+- The script converts that Laplacian into an *initial rate of temperature change*: **dT/dt = α ∇²T**, where α is the thermal diffusivity. A small **0.5 s forward-Euler step** then gives an illustrative updated temperature. This step is below the explicit stability limit for this grid and diffusivity; it is **one step, not a simulated time history**.
+
+![Heatmaps of a Gaussian warm spot in a thin steel plate and the corresponding initial heating and cooling rate](docs/steel-plate.svg)
+
+*Expected temperature distribution (left) and initial rate of change in °C/s (right), calculated using an independent finite-difference reference. The centre cools while the surrounding region warms. The automated test checks the complete GT4Py-computed field against this reference.*
+
+Because the warm spot lies well away from the edges, the existing periodic halo is a convenient numerical approximation for this short-time experiment. A real finite plate would need appropriate physical boundary conditions; they are not being modelled here.
+
+Run the example with:
+
+```sh
+uv run python steel_plate_example.py
+```
+
+This prints the central temperature, its initial cooling rate and its temperature after the short step. Unlike the impulse test, the result varies across many cells and is compared with an independent NumPy reference **over the whole grid**, not just at selected locations.
+
 ## Why model the grid as a subsystem?
 
 The example defines two Bilt systems in [`diffusion_demo.py`](diffusion_demo.py):
@@ -49,7 +74,7 @@ The example defines two Bilt systems in [`diffusion_demo.py`](diffusion_demo.py)
 
 The implementation explicitly assembles the child with
 
-```python
+```text
 internal_implementations={"grid": grid_implementation}
 ```
 
@@ -100,7 +125,7 @@ The example is also intentionally narrow: two spatial dimensions, periodic bound
 
 ## Tests and development checks
 
-[`tests/test_diffusion_demo.py`](tests/test_diffusion_demo.py) compares the result with an **independent NumPy implementation**, not with another invocation of the GT4Py stencil. The cases cover unequal grid spacing, both Bilt axis orders and periodic wrapping at a corner. A separate test checks the grid's derived coefficients through Bilt's public API.
+[`tests/test_diffusion_demo.py`](tests/test_diffusion_demo.py) compares the result with an **independent NumPy implementation**, not with another invocation of the GT4Py stencil. The cases cover unequal grid spacing, both Bilt axis orders and periodic wrapping at a corner. A second test checks the steel-plate example against an independent NumPy Laplacian at **all 6,561 cells**, including the rate of change and conservation of the average temperature over the Euler step. A separate test checks the grid's derived coefficients through Bilt's public API.
 
 ```sh
 uv run pytest -q
