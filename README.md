@@ -32,9 +32,18 @@ The colour scale stays fixed at 20–80 °C. This is a simplified two-dimensiona
 
 - **`CartesianGrid2D` subsystem:** Bilt represents grid spacing and derives `1/dx²` and `1/dy²` via ordinary transforms. Those coefficients are physical/discretisation relationships that can be reused independently of GT4Py.
 - **`Diffusion` subsystem:** Bilt connects the field and grid spacing to the Cartesian grid and computes the requested Laplacian.
-- **`HeatPlate` system:** Connects the spatial operator through equations and exposes `thermal_diffusivity`, `time_step`, `temperature_rate` and `next_temperature` as model ports. The heat equation and Euler update are Bilt equations, not numerical post-processing.
+- **`HeatPlate` system:** Exposes `laplacian`, `thermal_diffusivity`, `time_step`, `temperature_rate` and `next_temperature` as ports. The heat equation and Euler update are ordinary Bilt equations, not post-processing.
 - **GT4Py field operator:** `five_point_laplacian` expresses the stencil using named GT4Py dimensions and shifts, leaving numerical execution to GT4Py.
 - **Adapter:** [`gt4py_adapter.py`](gt4py_adapter.py) maps Bilt's named tensor axes onto GT4Py fields, adds a temporary one-cell periodic halo, evaluates the operator and restores the original axis order. Halo storage is an execution detail, not model state.
+
+**Connecting systems through ports.** The parent `HeatPlate` exposes its own `temperature`, `dx`, `dy` and `laplacian` ports. Small connection equations equate them with the corresponding ports on the nested `Diffusion` interface. The parameter `diffusion: Diffusion` in these *connection* equations is a reference to that child interface, not a runtime object passed to a numerical routine. The physical relationship instead uses only the parent boundary:
+
+```text
+temperature_rate = thermal_diffusivity * laplacian
+next_temperature = temperature + time_step * temperature_rate
+```
+
+This keeps the heat equation independent of the subsystem that computes the spatial operator. Bilt can analyse the combined relationships and select a calculation route.
 
 The adapter currently uses **Bilt's private evaluation context** for axis ordering. This is an experimental integration boundary, not yet a supported public API. The example covers a two-dimensional CPU stencil, not a general backend, time integrator or differentiable solver.
 

@@ -26,6 +26,7 @@ class HeatPlate(metaclass=Interface):
     dy: float = field()
     thermal_diffusivity: float = field()
     time_step: float = field()
+    laplacian: Tensor = field()
     temperature_rate: Tensor = field()
     next_temperature: Tensor = field()
 
@@ -49,9 +50,15 @@ def connect_dy(dy: float, diffusion: Diffusion) -> bool:
 
 
 @equation
-def heat_equation(temperature_rate: Tensor, thermal_diffusivity: float, diffusion: Diffusion) -> bool:
+def connect_laplacian(laplacian: Tensor, diffusion: Diffusion) -> bool:
+    """Expose the child subsystem's Laplacian on the parent boundary."""
+    return laplacian == diffusion.laplacian
+
+
+@equation
+def heat_equation(temperature_rate: Tensor, thermal_diffusivity: float, laplacian: Tensor) -> bool:
     """Relate the Laplacian to the temperature-change rate."""
-    return temperature_rate == diffusion.laplacian * thermal_diffusivity
+    return temperature_rate == laplacian * thermal_diffusivity
 
 
 @equation
@@ -67,7 +74,7 @@ def explicit_euler(
 
 plate_implementation = Implementation(
     HeatPlate,
-    [connect_temperature, connect_dx, connect_dy, heat_equation, explicit_euler],
+    [connect_temperature, connect_dx, connect_dy, connect_laplacian, heat_equation, explicit_euler],
     internal_implementations={"diffusion": diffusion_implementation},
 )
 

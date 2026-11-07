@@ -53,14 +53,18 @@ def test_heat_equation_and_step_are_model_relationships() -> None:
     )
 
     with plate_implementation:
+        laplacian = model.laplacian
         temperature_rate = model.temperature_rate
         next_temperature = model.next_temperature
 
     x_curvature = (np.roll(temperature, 1, axis=1) - 2.0 * temperature + np.roll(temperature, -1, axis=1)) / DX_M**2
     y_curvature = (np.roll(temperature, 1, axis=0) - 2.0 * temperature + np.roll(temperature, -1, axis=0)) / DY_M**2
-    expected_rate = thermal_diffusivity * (x_curvature + y_curvature)
+    expected_laplacian = x_curvature + y_curvature
+    expected_rate = thermal_diffusivity * expected_laplacian
 
+    np.testing.assert_allclose(laplacian.values, expected_laplacian, rtol=1e-10, atol=1e-10)
     np.testing.assert_allclose(temperature_rate.values, expected_rate, rtol=1e-10, atol=1e-10)
     np.testing.assert_allclose(next_temperature.values, temperature + time_step * expected_rate, rtol=1e-10, atol=1e-10)
+    assert laplacian.domain.dims == (y, x)
     assert temperature_rate.domain.dims == (y, x)
     assert next_temperature.domain.dims == (y, x)
