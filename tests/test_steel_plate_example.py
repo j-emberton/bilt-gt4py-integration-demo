@@ -2,13 +2,18 @@
 
 import numpy as np
 import pytest
+from bilt import tensor
 
+from gt4py_adapter import x, y
 from steel_plate_example import (
     DX_M,
     DY_M,
     GRID_POINTS,
+    HeatPlate,
     STEEL_DIFFUSIVITY_M2_PER_S,
     TIME_STEP_S,
+    initial_temperature,
+    plate_implementation,
     calculate_plate,
 )
 
@@ -33,3 +38,29 @@ def test_initial_steel_plate_heat_flow() -> None:
 
     # A periodic heat equation has no net source: the mean temperature is conserved.
     assert np.mean(updated) == pytest.approx(np.mean(temperature), abs=1e-9)
+
+
+def test_heat_equation_and_step_are_model_relationships() -> None:
+    temperature = initial_temperature()
+    thermal_diffusivity = 0.5 * STEEL_DIFFUSIVITY_M2_PER_S
+    time_step = 0.25
+    model = HeatPlate(
+        temperature=tensor(temperature, over=(y, x)),
+        dx=DX_M,
+        dy=DY_M,
+        thermal_diffusivity=thermal_diffusivity,
+        time_step=time_step,
+    )
+
+    with plate_implementation:
+        temperature_rate = model.temperature_rate
+        next_temperature = model.next_temperature
+
+    x_curvature = (np.roll(temperature, 1, axis=1) - 2.0 * temperature + np.roll(temperature, -1, axis=1)) / DX_M**2
+    y_curvature = (np.roll(temperature, 1, axis=0) - 2.0 * temperature + np.roll(temperature, -1, axis=0)) / DY_M**2
+    expected_rate = thermal_diffusivity * (x_curvature + y_curvature)
+
+    np.testing.assert_allclose(temperature_rate.values, expected_rate, rtol=1e-10, atol=1e-10)
+    np.testing.assert_allclose(next_temperature.values, temperature + time_step * expected_rate, rtol=1e-10, atol=1e-10)
+    assert temperature_rate.domain.dims == (y, x)
+    assert next_temperature.domain.dims == (y, x)

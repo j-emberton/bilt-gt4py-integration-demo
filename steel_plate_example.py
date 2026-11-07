@@ -1,9 +1,9 @@
 """Compute the initial heat diffusion from a warm spot in a thin steel plate."""
 
 import numpy as np
-from bilt import tensor
+from bilt import Implementation, Interface, Tensor, equation, field, system, tensor
 
-from diffusion_demo import Diffusion, implementation
+from diffusion_demo import Diffusion, implementation as diffusion_implementation
 from gt4py_adapter import x, y
 
 GRID_POINTS = 81
@@ -14,6 +14,56 @@ HOT_SPOT_RISE_C = 60.0
 HOT_SPOT_WIDTH_M = 0.05
 STEEL_DIFFUSIVITY_M2_PER_S = 1.2e-5
 TIME_STEP_S = 0.5
+
+
+@system
+class HeatPlate(metaclass=Interface):
+    """One explicit step of two-dimensional heat conduction."""
+
+    temperature: Tensor = field()
+    dx: float = field()
+    dy: float = field()
+    thermal_diffusivity: float = field()
+    time_step: float = field()
+    temperature_rate: Tensor = field()
+    next_temperature: Tensor = field()
+
+
+@equation
+def connect_temperature(temperature: Tensor, diffusion: Diffusion) -> bool:
+    return temperature == diffusion.temperature
+
+
+@equation
+def connect_dx(dx: float, diffusion: Diffusion) -> bool:
+    return dx == diffusion.dx
+
+
+@equation
+def connect_dy(dy: float, diffusion: Diffusion) -> bool:
+    return dy == diffusion.dy
+
+
+@equation
+def heat_equation(temperature_rate: Tensor, thermal_diffusivity: float, diffusion: Diffusion) -> bool:
+    return temperature_rate == diffusion.laplacian * thermal_diffusivity
+
+
+@equation
+def explicit_euler(
+    next_temperature: Tensor,
+    temperature: Tensor,
+    temperature_rate: Tensor,
+    time_step: float,
+) -> bool:
+    return next_temperature == temperature + temperature_rate * time_step
+
+
+plate_implementation = Implementation(
+    HeatPlate,
+    [connect_temperature, connect_dx, connect_dy, heat_equation, explicit_euler],
+    internal_implementations={"diffusion": diffusion_implementation},
+)
 
 
 def initial_temperature() -> np.ndarray:
@@ -30,19 +80,19 @@ def calculate_plate() -> tuple[np.ndarray, np.ndarray, np.ndarray]:
     """Return initial temperature, its heating/cooling rate, and one Euler step."""
     temperature = initial_temperature()
 
-    # Bilt owns the spatial field and the spacing; GT4Py evaluates the Laplacian.
-    model = Diffusion(
+    # The heat equation and timestep are Bilt equations, not NumPy post-processing.
+    plate = HeatPlate(
         temperature=tensor(temperature, over=(y, x)),
         dx=DX_M,
         dy=DY_M,
+        thermal_diffusivity=STEEL_DIFFUSIVITY_M2_PER_S,
+        time_step=TIME_STEP_S,
     )
-    with implementation:
-        laplacian = model.laplacian
+    with plate_implementation:
+        temperature_rate = plate.temperature_rate
+        next_temperature = plate.next_temperature
 
-    # Heat equation: dT/dt = alpha * laplacian(T).
-    rate_c_per_s = STEEL_DIFFUSIVITY_M2_PER_S * laplacian.values
-    after_one_step = temperature + TIME_STEP_S * rate_c_per_s
-    return temperature, rate_c_per_s, after_one_step
+    return temperature, temperature_rate.values, next_temperature.values
 
 
 def main() -> None:
