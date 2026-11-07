@@ -1,11 +1,21 @@
 """Compute the initial heat diffusion from a warm spot in a thin steel plate."""
 
-import numpy as np
-from bilt import Implementation, Interface, Tensor, equation, field, system, tensor
+from typing import Annotated
 
-from diffusion_demo import Diffusion
+import numpy as np
+from bilt import Implementation, Interface, Quantity, Tensor, equation, field, system, tensor
+from bilt.units import absolute_celsius, meter, second
+from bilt.units.dimensions import ABSOLUTE, LENGTH, TEMPERATURE, TIME
+
+from diffusion_demo import Diffusion, Length, TemperatureDifference, TemperatureLaplacian
 from diffusion_demo import implementation as diffusion_implementation
 from gt4py_adapter import x, y
+
+AbsoluteTemperature = Annotated[Quantity, TEMPERATURE, ABSOLUTE]
+AbsoluteTemperatureField = Annotated[Tensor, TEMPERATURE, ABSOLUTE]
+ThermalDiffusivity = Annotated[Quantity, LENGTH**2 / TIME]
+Duration = Annotated[Quantity, TIME]
+TemperatureRate = Annotated[Tensor, TEMPERATURE / TIME]
 
 GRID_POINTS = 81
 DX_M = 0.006
@@ -21,52 +31,68 @@ TIME_STEP_S = 0.5
 class HeatPlate(metaclass=Interface):
     """One explicit step of two-dimensional heat conduction."""
 
-    temperature: Tensor = field()
-    dx: float = field()
-    dy: float = field()
-    thermal_diffusivity: float = field()
-    time_step: float = field()
-    laplacian: Tensor = field()
-    temperature_rate: Tensor = field()
-    next_temperature: Tensor = field()
+    temperature: AbsoluteTemperatureField = field()
+    ambient_temperature: AbsoluteTemperature = field()
+    temperature_difference: TemperatureDifference = field()
+    dx: Length = field()
+    dy: Length = field()
+    thermal_diffusivity: ThermalDiffusivity = field()
+    time_step: Duration = field()
+    laplacian: TemperatureLaplacian = field()
+    temperature_rate: TemperatureRate = field()
+    next_temperature: AbsoluteTemperatureField = field()
 
 
 @equation
-def connect_temperature(temperature: Tensor, diffusion: Diffusion) -> bool:
-    """Connect the model's temperature to the numerical diffusion component."""
-    return temperature == diffusion.temperature
+def ambient_difference(
+    temperature_difference: TemperatureDifference,
+    temperature: AbsoluteTemperatureField,
+    ambient_temperature: AbsoluteTemperature,
+) -> bool:
+    """Express the field as a temperature change relative to ambient."""
+    return temperature_difference == temperature - ambient_temperature
 
 
 @equation
-def connect_dx(dx: float, diffusion: Diffusion) -> bool:
+def connect_temperature(temperature_difference: TemperatureDifference, diffusion: Diffusion) -> bool:
+    """Connect the relative temperature field to the diffusion subsystem."""
+    return temperature_difference == diffusion.temperature
+
+
+@equation
+def connect_dx(dx: Length, diffusion: Diffusion) -> bool:
     """Connect x-spacing to the numerical diffusion component."""
     return dx == diffusion.dx
 
 
 @equation
-def connect_dy(dy: float, diffusion: Diffusion) -> bool:
+def connect_dy(dy: Length, diffusion: Diffusion) -> bool:
     """Connect y-spacing to the numerical diffusion component."""
     return dy == diffusion.dy
 
 
 @equation
-def connect_laplacian(laplacian: Tensor, diffusion: Diffusion) -> bool:
+def connect_laplacian(laplacian: TemperatureLaplacian, diffusion: Diffusion) -> bool:
     """Expose the child subsystem's Laplacian on the parent boundary."""
     return laplacian == diffusion.laplacian
 
 
 @equation
-def heat_equation(temperature_rate: Tensor, thermal_diffusivity: float, laplacian: Tensor) -> bool:
+def heat_equation(
+    temperature_rate: TemperatureRate,
+    thermal_diffusivity: ThermalDiffusivity,
+    laplacian: TemperatureLaplacian,
+) -> bool:
     """Relate the Laplacian to the temperature-change rate."""
     return temperature_rate == laplacian * thermal_diffusivity
 
 
 @equation
 def explicit_euler(
-    next_temperature: Tensor,
-    temperature: Tensor,
-    temperature_rate: Tensor,
-    time_step: float,
+    next_temperature: AbsoluteTemperatureField,
+    temperature: AbsoluteTemperatureField,
+    temperature_rate: TemperatureRate,
+    time_step: Duration,
 ) -> bool:
     """Advance the temperature by one explicit time step."""
     return next_temperature == temperature + temperature_rate * time_step
@@ -74,7 +100,7 @@ def explicit_euler(
 
 plate_implementation = Implementation(
     HeatPlate,
-    [connect_temperature, connect_dx, connect_dy, connect_laplacian, heat_equation, explicit_euler],
+    [ambient_difference, connect_temperature, connect_dx, connect_dy, connect_laplacian, heat_equation, explicit_euler],
     internal_implementations={"diffusion": diffusion_implementation},
 )
 
@@ -95,17 +121,18 @@ def calculate_plate() -> tuple[np.ndarray, np.ndarray, np.ndarray]:
 
     # The heat equation and timestep are Bilt equations, not NumPy post-processing.
     plate = HeatPlate(
-        temperature=tensor(temperature, over=(y, x)),
-        dx=DX_M,
-        dy=DY_M,
-        thermal_diffusivity=STEEL_DIFFUSIVITY_M2_PER_S,
-        time_step=TIME_STEP_S,
+        temperature=tensor(temperature, over=(y, x), unit=absolute_celsius),
+        ambient_temperature=Quantity(AMBIENT_TEMPERATURE_C, absolute_celsius),
+        dx=DX_M * meter,
+        dy=DY_M * meter,
+        thermal_diffusivity=STEEL_DIFFUSIVITY_M2_PER_S * meter**2 / second,
+        time_step=TIME_STEP_S * second,
     )
     with plate_implementation:
         temperature_rate = plate.temperature_rate
         next_temperature = plate.next_temperature
 
-    return temperature, temperature_rate.values, next_temperature.values
+    return temperature, temperature_rate.values, next_temperature.convert_to(absolute_celsius).values
 
 
 def main() -> None:

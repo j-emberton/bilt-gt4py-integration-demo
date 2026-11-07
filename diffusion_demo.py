@@ -1,28 +1,37 @@
 """Demonstrate a GT4Py stencil evaluated through an ordinary Bilt subsystem."""
 
+from typing import Annotated
+
 import numpy as np
-from bilt import Implementation, Interface, Tensor, equation, field, system, tensor, transform
+from bilt import Implementation, Interface, Quantity, Tensor, equation, field, system, tensor, transform
+from bilt.units import kelvin, meter
+from bilt.units.dimensions import LENGTH, TEMPERATURE
 
 from gt4py_adapter import x, y
+
+Length = Annotated[Quantity, LENGTH]
+InverseArea = Annotated[Quantity, LENGTH**-2]
+TemperatureDifference = Annotated[Tensor, TEMPERATURE]
+TemperatureLaplacian = Annotated[Tensor, TEMPERATURE / LENGTH**2]
 
 
 @system
 class CartesianGrid2D(metaclass=Interface):
     """Uniform Cartesian grid spacing and its derived Laplacian coefficients."""
 
-    dx: float = field()
-    dy: float = field()
-    inv_dx2: float = field()
-    inv_dy2: float = field()
+    dx: Length = field()
+    dy: Length = field()
+    inv_dx2: InverseArea = field()
+    inv_dy2: InverseArea = field()
 
 
 @transform
-def inv_dx2(dx: float) -> float:
+def inv_dx2(dx: Length) -> InverseArea:
     return 1.0 / dx**2
 
 
 @transform
-def inv_dy2(dy: float) -> float:
+def inv_dy2(dy: Length) -> InverseArea:
     return 1.0 / dy**2
 
 
@@ -33,34 +42,34 @@ grid_implementation = Implementation(CartesianGrid2D, [inv_dx2, inv_dy2])
 class Diffusion(metaclass=Interface):
     """Temperature field and its discrete two-dimensional Laplacian."""
 
-    temperature: Tensor = field()
-    dx: float = field()
-    dy: float = field()
-    laplacian: Tensor = field()
+    temperature: TemperatureDifference = field()
+    dx: Length = field()
+    dy: Length = field()
+    laplacian: TemperatureLaplacian = field()
 
 
 @equation
-def connect_dx(dx: float, grid: CartesianGrid2D) -> bool:
+def connect_dx(dx: Length, grid: CartesianGrid2D) -> bool:
     return dx == grid.dx
 
 
 @equation
-def connect_dy(dy: float, grid: CartesianGrid2D) -> bool:
+def connect_dy(dy: Length, grid: CartesianGrid2D) -> bool:
     return dy == grid.dy
 
 
 @equation
-def connect_inverse_dx_squared(inv_dx2: float, grid: CartesianGrid2D) -> bool:
+def connect_inverse_dx_squared(inv_dx2: InverseArea, grid: CartesianGrid2D) -> bool:
     return inv_dx2 == grid.inv_dx2
 
 
 @equation
-def connect_inverse_dy_squared(inv_dy2: float, grid: CartesianGrid2D) -> bool:
+def connect_inverse_dy_squared(inv_dy2: InverseArea, grid: CartesianGrid2D) -> bool:
     return inv_dy2 == grid.inv_dy2
 
 
 @transform
-def laplacian(temperature: Tensor, inv_dx2: float, inv_dy2: float) -> Tensor:
+def laplacian(temperature: TemperatureDifference, inv_dx2: InverseArea, inv_dy2: InverseArea) -> TemperatureLaplacian:
     # Imports stay inside the transform because Bilt compiles its function AST.
     from gt4py_adapter import periodic_laplacian  # noqa: PLC0415
 
@@ -87,7 +96,7 @@ def main() -> None:
     values[2, 3] = 1.0
 
     # The model's (y, x) ordering differs from GT4Py's (I, J) ordering.
-    model = Diffusion(temperature=tensor(values, over=(y, x)), dx=2.0, dy=1.0)
+    model = Diffusion(temperature=tensor(values, over=(y, x), unit=kelvin), dx=2.0 * meter, dy=1.0 * meter)
     with implementation:
         result = model.laplacian
 
