@@ -45,7 +45,12 @@ next_temperature = temperature + time_step * temperature_rate
 
 This keeps the heat equation independent of the subsystem that computes the spatial operator. Bilt can analyse the combined relationships and select a calculation route.
 
-The adapter currently uses **Bilt's private evaluation context** for axis ordering. This is an experimental integration boundary, not yet a supported public API. The example covers a two-dimensional CPU stencil and repeated model evaluations orchestrated by Python, not a general backend or built-in Bilt time integrator.
+## Lessons learned
+
+1. **Map canonical domains to external indexing.** Bilt's canonical tensor-axis order is not necessarily GT4Py's `(I, J)` order. An adapter must map named dimensions to the external kernel's indexing and restore the result order. This demo reads the order from **Bilt's private evaluation context**; a public interface exposing domain metadata would be preferable.
+2. **Make repeated time stepping efficient.** Python currently orchestrates 320 Bilt model evaluations, each computing an Euler step with a GT4Py Laplacian. This demonstrates correctness, but repeatedly crosses the Bilt–GT4Py boundary and creates tensors, halo arrays and output buffers. A scalable integration should resolve the model once, reuse compiled kernels and buffers across steps, and keep time-loop orchestration separate from the model equations.
+
+This remains a two-dimensional CPU proof of concept, not a general GT4Py backend or a built-in Bilt time integrator.
 
 ## Validation
 
