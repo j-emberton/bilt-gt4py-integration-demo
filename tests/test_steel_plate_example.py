@@ -3,6 +3,7 @@
 import numpy as np
 import pytest
 from bilt import Quantity, tensor
+from bilt.errors import BiltInputDimensionalityError
 from bilt.units import absolute_celsius, absolute_kelvin, kelvin, meter, second
 
 from gt4py_adapter import x, y
@@ -80,3 +81,9 @@ def test_heat_equation_and_step_are_model_relationships() -> None:
     assert laplacian.domain.dims == (y, x)
     assert temperature_rate.domain.dims == (y, x)
     assert next_temperature.domain.dims == (y, x)
+
+
+def test_plate_rejects_relative_temperature_as_absolute_reading() -> None:
+    temperature = initial_temperature()
+    with pytest.raises(BiltInputDimensionalityError, match="'temperature'"):
+        HeatPlate(temperature=tensor(temperature, over=(y, x), unit=kelvin))

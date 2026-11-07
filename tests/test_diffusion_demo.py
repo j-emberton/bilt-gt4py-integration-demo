@@ -3,7 +3,8 @@
 import numpy as np
 import pytest
 from bilt import tensor
-from bilt.units import centimeter, kelvin, meter, millimeter
+from bilt.errors import BiltInputDimensionalityError
+from bilt.units import centimeter, kelvin, meter, millimeter, second
 
 from diffusion_demo import CartesianGrid2D, Diffusion, grid_implementation, implementation
 from gt4py_adapter import x, y
@@ -48,3 +49,8 @@ def test_periodic_laplacian_matches_numpy(
     assert result.unit == kelvin / meter**2
     assert result.domain.dims == dimensions
     assert result.shape == ordered_values.shape
+
+
+def test_grid_rejects_time_as_spacing() -> None:
+    with pytest.raises(BiltInputDimensionalityError, match="'dx'"):
+        CartesianGrid2D(dx=2.0 * second)
