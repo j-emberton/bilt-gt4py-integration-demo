@@ -9,7 +9,7 @@ import math
 import struct
 from pathlib import Path
 
-import numpy as np
+import numpy as np  # noqa: TC002
 from bilt import Quantity, tensor
 from bilt.units import absolute_celsius, meter, second
 

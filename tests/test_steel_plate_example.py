@@ -93,9 +93,10 @@ def test_repeated_bilt_gt4py_steps_match_reference() -> None:
     """Check multiple model-driven updates against an independent NumPy reference."""
     from scripts.generate_steel_plate_gif import simulate_fields  # noqa: PLC0415
 
-    frames = simulate_fields(frame_count=3, steps_per_frame=2)
+    frame_count = 3
+    frames = simulate_fields(frame_count=frame_count, steps_per_frame=2)
     expected = initial_temperature()
-    assert len(frames) == 3
+    assert len(frames) == frame_count
     np.testing.assert_allclose(frames[0], expected)
 
     for output in frames[1:]:
