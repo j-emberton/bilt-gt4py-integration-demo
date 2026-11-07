@@ -66,7 +66,8 @@ def test_heat_equation_and_step_are_model_relationships() -> None:
     expected_rate = thermal_diffusivity * expected_laplacian
 
     assert laplacian.unit == kelvin / meter**2
-    np.testing.assert_allclose(laplacian.values, expected_laplacian, rtol=1e-10, atol=1e-10)
+    # Subtracting absolute kelvin readings amplifies roundoff in the second derivative.
+    np.testing.assert_allclose(laplacian.values, expected_laplacian, rtol=1e-10, atol=1e-8)
     np.testing.assert_allclose(temperature_rate.values, expected_rate, rtol=1e-10, atol=1e-10)
     np.testing.assert_allclose(
         next_temperature.convert_to(absolute_celsius).values,
