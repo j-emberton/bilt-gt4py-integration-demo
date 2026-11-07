@@ -1,0 +1,68 @@
+default_install_hook_types = ["pre-commit", "pre-push"]
+
+[[repos]]
+repo = "https://github.com/pre-commit/pre-commit-hooks"
+rev = "v6.0.0"
+
+[[repos.hooks]]
+id = "check-ast"
+
+[[repos.hooks]]
+id = "check-merge-conflict"
+
+[[repos.hooks]]
+id = "check-toml"
+
+[[repos.hooks]]
+id = "check-yaml"
+args = ["--unsafe"]
+
+[[repos.hooks]]
+id = "debug-statements"
+
+[[repos.hooks]]
+id = "end-of-file-fixer"
+
+[[repos.hooks]]
+id = "trailing-whitespace"
+
+[[repos]]
+repo = "https://github.com/astral-sh/ruff-pre-commit"
+rev = "v0.17.3"
+
+[[repos.hooks]]
+id = "ruff-check"
+
+[[repos.hooks]]
+id = "ruff-format"
+
+[[repos]]
+repo = "local"
+
+[[repos.hooks]]
+id = "pyrefly"
+name = "pyrefly"
+types = ["python"]
+entry = "uv run --no-sync pyrefly check"
+language = "system"
+pass_filenames = false
+always_run = true
+
+[[repos.hooks]]
+id = "ty"
+name = "ty"
+types = ["python"]
+entry = "uv run --no-sync ty check"
+language = "system"
+pass_filenames = false
+always_run = true
+
+[[repos.hooks]]
+id = "pytest"
+name = "pytest"
+stages = ["pre-push"]
+types = ["python"]
+entry = "uv run --no-sync pytest -q"
+language = "system"
+pass_filenames = false
+always_run = true
