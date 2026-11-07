@@ -24,10 +24,9 @@ def five_point_laplacian(
     inv_dy2: gtx.float64,
 ) -> gtx.Field[[I, J], gtx.float64]:
     """Compute the discrete Laplacian over the physical grid cells."""
-    return (
-        (source(I - 1) - 2.0 * source + source(I + 1)) * inv_dx2
-        + (source(J - 1) - 2.0 * source + source(J + 1)) * inv_dy2
-    )
+    return (source(I - 1) - 2.0 * source + source(I + 1)) * inv_dx2 + (
+        source(J - 1) - 2.0 * source + source(J + 1)
+    ) * inv_dy2
 
 
 def periodic_laplacian(values: np.ndarray, inv_dx2: float, inv_dy2: float) -> np.ndarray:
