@@ -2,10 +2,12 @@
 
 import numpy as np
 import pytest
-from bilt import tensor
+from bilt import Quantity, tensor
+from bilt.units import absolute_celsius, absolute_kelvin, kelvin, meter, second
 
 from gt4py_adapter import x, y
 from steel_plate_example import (
+    AMBIENT_TEMPERATURE_C,
     DX_M,
     DY_M,
     GRID_POINTS,
@@ -45,11 +47,12 @@ def test_heat_equation_and_step_are_model_relationships() -> None:
     thermal_diffusivity = 0.5 * STEEL_DIFFUSIVITY_M2_PER_S
     time_step = 0.25
     model = HeatPlate(
-        temperature=tensor(temperature, over=(y, x)),
-        dx=DX_M,
-        dy=DY_M,
-        thermal_diffusivity=thermal_diffusivity,
-        time_step=time_step,
+        temperature=tensor(temperature, over=(y, x), unit=absolute_celsius),
+        ambient_temperature=Quantity(AMBIENT_TEMPERATURE_C, absolute_celsius),
+        dx=DX_M * meter,
+        dy=DY_M * meter,
+        thermal_diffusivity=thermal_diffusivity * meter**2 / second,
+        time_step=time_step * second,
     )
 
     with plate_implementation:
@@ -62,9 +65,17 @@ def test_heat_equation_and_step_are_model_relationships() -> None:
     expected_laplacian = x_curvature + y_curvature
     expected_rate = thermal_diffusivity * expected_laplacian
 
+    assert laplacian.unit == kelvin / meter**2
     np.testing.assert_allclose(laplacian.values, expected_laplacian, rtol=1e-10, atol=1e-10)
     np.testing.assert_allclose(temperature_rate.values, expected_rate, rtol=1e-10, atol=1e-10)
-    np.testing.assert_allclose(next_temperature.values, temperature + time_step * expected_rate, rtol=1e-10, atol=1e-10)
+    np.testing.assert_allclose(
+        next_temperature.convert_to(absolute_celsius).values,
+        temperature + time_step * expected_rate,
+        rtol=1e-10,
+        atol=1e-10,
+    )
+    assert temperature_rate.unit == kelvin / second
+    assert next_temperature.unit == absolute_kelvin
     assert laplacian.domain.dims == (y, x)
     assert temperature_rate.domain.dims == (y, x)
     assert next_temperature.domain.dims == (y, x)
