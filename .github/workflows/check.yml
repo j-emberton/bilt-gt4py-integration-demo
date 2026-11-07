@@ -1,0 +1,41 @@
+name: check
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  checks:
+    name: Python 3.15 (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v10.3.2
+        with:
+          python-version: "3.15"
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
+      - name: Set up Rust for Bilt's native extension
+        run: rustup toolchain install stable --profile minimal
+      - name: Install dependencies
+        run: uv sync --locked --all-groups
+      - name: Ruff lint
+        run: uv run --no-sync ruff check .
+      - name: Ruff format
+        run: uv run --no-sync ruff format --check .
+      - name: Pyrefly
+        run: uv run --no-sync pyrefly check
+      - name: ty
+        run: uv run --no-sync ty check
+      - name: Tests
+        run: uv run --no-sync pytest -q
+      - name: Run example
+        run: uv run --no-sync python diffusion_demo.py
+      - name: Pre-commit hooks
+        run: uv run --no-sync prek run --all-files

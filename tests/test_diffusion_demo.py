@@ -2,8 +2,8 @@
 
 import numpy as np
 import pytest
-
 from bilt import tensor
+
 from diffusion_demo import CartesianGrid2D, Diffusion, grid_implementation, implementation
 from gt4py_adapter import x, y
 

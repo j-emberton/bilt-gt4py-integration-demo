@@ -1,8 +1,8 @@
 """Demonstrate a GT4Py stencil evaluated through an ordinary Bilt subsystem."""
 
 import numpy as np
-
 from bilt import Implementation, Interface, Tensor, equation, field, system, tensor, transform
+
 from gt4py_adapter import x, y
 
 
@@ -65,7 +65,7 @@ def laplacian(temperature: Tensor, inv_dx2: float, inv_dy2: float) -> Tensor:
     from gt4py_adapter import periodic_laplacian  # noqa: PLC0415
 
     # Bilt lowers Tensor arguments/results to NumPy arrays for Python execution.
-    return periodic_laplacian(temperature, inv_dx2, inv_dy2)  # type: ignore
+    return periodic_laplacian(temperature, inv_dx2, inv_dy2)  # pyrefly: ignore[bad-argument-type, bad-return]  # ty: ignore[invalid-argument-type, invalid-return-type]
 
 
 implementation = Implementation(
