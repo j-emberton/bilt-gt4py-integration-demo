@@ -40,6 +40,6 @@ jobs:
       - name: Run steel-plate example
         run: uv run --no-sync python steel_plate_example.py
       - name: Verify reproducible animation
-        run: uv run --no-sync python -m scripts.generate_steel_plate_gif --check --emit-base64
+        run: uv run --no-sync python -m scripts.generate_steel_plate_gif --check
       - name: Pre-commit hooks
         run: uv run --no-sync prek run --all-files
