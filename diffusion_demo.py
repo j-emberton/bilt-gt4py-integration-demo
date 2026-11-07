@@ -39,8 +39,8 @@ grid_implementation = Implementation(CartesianGrid2D, [inv_dx2, inv_dy2])
 
 
 @system
-class Diffusion(metaclass=Interface):
-    """Temperature field and its discrete two-dimensional Laplacian."""
+class Laplacian2D(metaclass=Interface):
+    """A two-dimensional spatial Laplacian of a relative temperature field."""
 
     temperature: TemperatureDifference = field()
     dx: Length = field()
@@ -78,7 +78,7 @@ def laplacian(temperature: TemperatureDifference, inv_dx2: InverseArea, inv_dy2:
 
 
 implementation = Implementation(
-    Diffusion,
+    Laplacian2D,
     [
         connect_dx,
         connect_dy,
@@ -96,7 +96,7 @@ def main() -> None:
     values[2, 3] = 1.0
 
     # The model's (y, x) ordering differs from GT4Py's (I, J) ordering.
-    model = Diffusion(temperature=tensor(values, over=(y, x), unit=kelvin), dx=2.0 * meter, dy=1.0 * meter)
+    model = Laplacian2D(temperature=tensor(values, over=(y, x), unit=kelvin), dx=2.0 * meter, dy=1.0 * meter)
     with implementation:
         result = model.laplacian
 

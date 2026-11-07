@@ -6,7 +6,7 @@ from bilt import tensor
 from bilt.errors import BiltInputDimensionalityError
 from bilt.units import centimeter, kelvin, meter, millimeter, second
 
-from diffusion_demo import CartesianGrid2D, Diffusion, grid_implementation, implementation
+from diffusion_demo import CartesianGrid2D, Laplacian2D, grid_implementation, implementation
 from gt4py_adapter import x, y
 
 
@@ -36,7 +36,7 @@ def test_periodic_laplacian_matches_numpy(
     # Both dimension orders must produce the same physical answer.
     ordered_values = values.T if reverse_axes else values
     dimensions = (y, x) if reverse_axes else (x, y)
-    model = Diffusion(
+    model = Laplacian2D(
         temperature=tensor(ordered_values, over=dimensions, unit=kelvin),
         dx=200.0 * centimeter,
         dy=1000.0 * millimeter,
@@ -54,3 +54,27 @@ def test_periodic_laplacian_matches_numpy(
 def test_grid_rejects_time_as_spacing() -> None:
     with pytest.raises(BiltInputDimensionalityError, match="'dx'"):
         CartesianGrid2D(dx=2.0 * second)
+
+
+@pytest.mark.parametrize("reverse_axes", [False, True])
+@pytest.mark.parametrize("field_kind", ["uniform", "random"])
+def test_full_field_laplacian_matches_numpy(field_kind: str, reverse_axes: bool) -> None:
+    """Compare all cells, including boundaries, for uniform and spatially varying fields."""
+    if field_kind == "uniform":
+        values = np.full((7, 5), 17.0)
+    else:
+        values = np.random.default_rng(2026).standard_normal((7, 5))
+
+    dimensions = (y, x) if reverse_axes else (x, y)
+    ordered_values = values.T if reverse_axes else values
+    model = Laplacian2D(
+        temperature=tensor(ordered_values, over=dimensions, unit=kelvin),
+        dx=2.0 * meter,
+        dy=75.0 * centimeter,
+    )
+    with implementation:
+        result = model.laplacian
+
+    expected = reference_laplacian(values, dx=2.0, dy=0.75)
+    np.testing.assert_allclose(result.values, expected.T if reverse_axes else expected, rtol=1e-11, atol=1e-11)
+    assert result.domain.dims == dimensions

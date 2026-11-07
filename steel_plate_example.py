@@ -7,8 +7,8 @@ from bilt import Implementation, Interface, Quantity, Tensor, equation, field, s
 from bilt.units import absolute_celsius, meter, second
 from bilt.units.dimensions import ABSOLUTE, LENGTH, TEMPERATURE, TIME
 
-from diffusion_demo import Diffusion, Length, TemperatureDifference, TemperatureLaplacian
-from diffusion_demo import implementation as diffusion_implementation
+from diffusion_demo import Laplacian2D, Length, TemperatureDifference, TemperatureLaplacian
+from diffusion_demo import implementation as laplacian_implementation
 from gt4py_adapter import x, y
 
 AbsoluteTemperature = Annotated[Quantity, TEMPERATURE, ABSOLUTE]
@@ -54,27 +54,27 @@ def ambient_difference(
 
 
 @equation
-def connect_temperature(temperature_difference: TemperatureDifference, diffusion: Diffusion) -> bool:
-    """Connect the relative temperature field to the diffusion subsystem."""
-    return temperature_difference == diffusion.temperature
+def connect_temperature(temperature_difference: TemperatureDifference, stencil: Laplacian2D) -> bool:
+    """Connect the relative temperature field to the Laplacian subsystem."""
+    return temperature_difference == stencil.temperature
 
 
 @equation
-def connect_dx(dx: Length, diffusion: Diffusion) -> bool:
+def connect_dx(dx: Length, stencil: Laplacian2D) -> bool:
     """Connect x-spacing to the numerical diffusion component."""
-    return dx == diffusion.dx
+    return dx == stencil.dx
 
 
 @equation
-def connect_dy(dy: Length, diffusion: Diffusion) -> bool:
+def connect_dy(dy: Length, stencil: Laplacian2D) -> bool:
     """Connect y-spacing to the numerical diffusion component."""
-    return dy == diffusion.dy
+    return dy == stencil.dy
 
 
 @equation
-def connect_laplacian(laplacian: TemperatureLaplacian, diffusion: Diffusion) -> bool:
+def connect_laplacian(laplacian: TemperatureLaplacian, stencil: Laplacian2D) -> bool:
     """Expose the child subsystem's Laplacian on the parent boundary."""
-    return laplacian == diffusion.laplacian
+    return laplacian == stencil.laplacian
 
 
 @equation
@@ -101,7 +101,7 @@ def explicit_euler(
 plate_implementation = Implementation(
     HeatPlate,
     [ambient_difference, connect_temperature, connect_dx, connect_dy, connect_laplacian, heat_equation, explicit_euler],
-    internal_implementations={"diffusion": diffusion_implementation},
+    internal_implementations={"stencil": laplacian_implementation},
 )
 
 

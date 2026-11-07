@@ -26,17 +26,17 @@ The `HeatPlate` system declares absolute temperature, ambient temperature, lengt
 
 ![Reference heat diffusion in a steel plate, showing a central hot spot cooling and spreading over 160 seconds](docs/steel-plate.gif)
 
-The colour scale stays fixed at 20–80 °C. This is a simplified two-dimensional conduction problem with periodic boundaries, no external heat sources and no heat loss.
+The colour scale stays fixed at 20–80 °C. This is a simplified two-dimensional conduction problem with periodic boundaries, no external heat sources and no heat loss. Regenerate the reference animation with `uv run python -m scripts.generate_steel_plate_gif` or verify it with the `--check` flag.
 
 ## Why this structure?
 
 - **`CartesianGrid2D` subsystem:** Bilt represents grid spacing (length) and derives `1/dx²` and `1/dy²` (inverse area) via ordinary transforms. Those coefficients are physical/discretisation relationships that can be reused independently of GT4Py.
-- **`Diffusion` subsystem:** Bilt connects the field and grid spacing to the Cartesian grid and computes the requested Laplacian.
+- **`Laplacian2D` subsystem:** Bilt connects the field and grid spacing to the Cartesian grid and computes the requested Laplacian.
 - **`HeatPlate` system:** Exposes absolute and relative temperature, `laplacian`, `thermal_diffusivity`, `time_step`, `temperature_rate` and `next_temperature` as dimensioned ports. The heat equation and Euler update are ordinary Bilt equations, not post-processing.
 - **GT4Py field operator:** `five_point_laplacian` expresses the stencil using named GT4Py dimensions and shifts, leaving numerical execution to GT4Py.
 - **Adapter:** [`gt4py_adapter.py`](gt4py_adapter.py) maps Bilt's named tensor axes onto GT4Py fields, adds a temporary one-cell periodic halo, evaluates the operator and restores the original axis order. Halo storage is an execution detail, not model state.
 
-**Connecting systems through ports.** The parent `HeatPlate` exposes its own `temperature_difference`, `dx`, `dy` and `laplacian` ports. Small connection equations equate them with the corresponding ports on the nested `Diffusion` interface. The parameter `diffusion: Diffusion` in these *connection* equations is a reference to that child interface, not a runtime object passed to a numerical routine. The parent also defines `temperature_difference = temperature - ambient_temperature`, so the stencil acts on temperature differences rather than absolute Celsius readings. The physical relationships use only the parent boundary:
+**Connecting systems through ports.** The parent `HeatPlate` exposes its own `temperature_difference`, `dx`, `dy` and `laplacian` ports. Small connection equations equate them with the corresponding ports on the nested `Laplacian2D` interface. The parameter `stencil: Laplacian2D` in these *connection* equations is a reference to that child interface, not a runtime object passed to a numerical routine. The parent also defines `temperature_difference = temperature - ambient_temperature`, so the stencil acts on temperature differences rather than absolute Celsius readings. The physical relationships use only the parent boundary:
 
 ```text
 temperature_rate = thermal_diffusivity * laplacian
@@ -49,7 +49,7 @@ The adapter currently uses **Bilt's private evaluation context** for axis orderi
 
 ## Validation
 
-Tests compare the GT4Py-computed field against an **independent NumPy finite-difference implementation** over the full grid, including reversed axes, periodic boundaries and the steel-plate initial rate. Tests also check conversion from centimetres/millimetres to metres and the output's physical units. GitHub Actions runs pytest, Ruff, Pyrefly, ty and prek on macOS and Ubuntu.
+Tests compare the GT4Py-computed field against an **independent NumPy finite-difference implementation** over the full grid, including reversed axes, periodic boundaries, uniform and seeded random fields, and the steel-plate initial rate. Tests also check conversion from centimetres/millimetres to metres and the output's physical units. GitHub Actions runs pytest, Ruff, Pyrefly, ty and prek on macOS and Ubuntu.
 
 ```sh
 uv run pytest -q
