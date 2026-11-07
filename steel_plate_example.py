@@ -3,7 +3,8 @@
 import numpy as np
 from bilt import Implementation, Interface, Tensor, equation, field, system, tensor
 
-from diffusion_demo import Diffusion, implementation as diffusion_implementation
+from diffusion_demo import Diffusion
+from diffusion_demo import implementation as diffusion_implementation
 from gt4py_adapter import x, y
 
 GRID_POINTS = 81
@@ -31,21 +32,25 @@ class HeatPlate(metaclass=Interface):
 
 @equation
 def connect_temperature(temperature: Tensor, diffusion: Diffusion) -> bool:
+    """Connect the model's temperature to the numerical diffusion component."""
     return temperature == diffusion.temperature
 
 
 @equation
 def connect_dx(dx: float, diffusion: Diffusion) -> bool:
+    """Connect x-spacing to the numerical diffusion component."""
     return dx == diffusion.dx
 
 
 @equation
 def connect_dy(dy: float, diffusion: Diffusion) -> bool:
+    """Connect y-spacing to the numerical diffusion component."""
     return dy == diffusion.dy
 
 
 @equation
 def heat_equation(temperature_rate: Tensor, thermal_diffusivity: float, diffusion: Diffusion) -> bool:
+    """Relate the Laplacian to the temperature-change rate."""
     return temperature_rate == diffusion.laplacian * thermal_diffusivity
 
 
@@ -56,6 +61,7 @@ def explicit_euler(
     temperature_rate: Tensor,
     time_step: float,
 ) -> bool:
+    """Advance the temperature by one explicit time step."""
     return next_temperature == temperature + temperature_rate * time_step
 
 

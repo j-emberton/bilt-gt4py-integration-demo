@@ -9,12 +9,12 @@ from steel_plate_example import (
     DX_M,
     DY_M,
     GRID_POINTS,
-    HeatPlate,
     STEEL_DIFFUSIVITY_M2_PER_S,
     TIME_STEP_S,
+    HeatPlate,
+    calculate_plate,
     initial_temperature,
     plate_implementation,
-    calculate_plate,
 )
 
 
