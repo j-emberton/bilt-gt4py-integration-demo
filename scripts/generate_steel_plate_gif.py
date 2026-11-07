@@ -22,6 +22,9 @@ from steel_plate_example import (
 )
 
 WIDTH, HEIGHT = 312, 396
+BITS_PER_BYTE = 8
+MAX_CODES = 4096
+MAX_CODE_WIDTH = 12
 PALETTE_STOPS = ((19, 36, 83), (27, 101, 163), (45, 181, 191), (248, 212, 84), (190, 50, 44))
 GLYPHS = dict(zip("0123456789TS=CHEAPL ", [
     "01110 10001 10011 10101 11001 10001 01110",
@@ -106,7 +109,7 @@ def _compress(data: bytes) -> bytes:
         nonlocal buffer, used
         buffer |= code << used
         used += width
-        while used >= 8:
+        while used >= BITS_PER_BYTE:
             output.append(buffer & 255)
             buffer >>= 8
             used -= 8
@@ -121,10 +124,10 @@ def _compress(data: bytes) -> bytes:
             previous = match
             continue
         emit(previous, width)
-        if next_code < 4096:
+        if next_code < MAX_CODES:
             table[key] = next_code
             next_code += 1
-            if next_code > (1 << width) and width < 12:
+            if next_code > (1 << width) and width < MAX_CODE_WIDTH:
                 width += 1
         else:
             emit(256, width)
@@ -138,7 +141,7 @@ def _compress(data: bytes) -> bytes:
 
 
 def generate_gif() -> bytes:
-    """Encode the original 0–160 s animation using an independent reference solver."""
+    """Encode the original 0-160 s animation using an independent reference solver."""
     coordinates_x = (np.arange(GRID_POINTS) - GRID_POINTS // 2) * DX_M
     coordinates_y = (np.arange(GRID_POINTS) - GRID_POINTS // 2) * DY_M
     field = np.array([
