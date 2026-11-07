@@ -53,7 +53,7 @@ def main() -> None:
     centre = GRID_POINTS // 2
     centre_point = (centre, centre)
 
-    print(f"Steel plate: {GRID_POINTS} × {GRID_POINTS} cells")  # noqa: T201
+    print(f"Steel plate: {GRID_POINTS} x {GRID_POINTS} cells")  # noqa: T201
     print(f"Centre initially: {temperature[centre_point]:.2f} °C")  # noqa: T201
     print(f"Initial cooling rate: {rate[centre_point]:.3f} °C/s")  # noqa: T201
     print(f"Centre after {TIME_STEP_S:g} s: {after_one_step[centre_point]:.2f} °C")  # noqa: T201

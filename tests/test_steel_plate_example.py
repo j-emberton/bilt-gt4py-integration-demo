@@ -36,7 +36,8 @@ def test_initial_steel_plate_heat_flow() -> None:
     centre = GRID_POINTS // 2
     assert rate_c_per_s[centre, centre] < 0  # The hot centre cools.
     assert np.max(rate_c_per_s) > 0  # Cooler neighbours warm up.
-    assert np.count_nonzero(np.abs(rate_c_per_s) > 1e-4) > GRID_POINTS
+    measurable_rate_c_per_s = 1e-4
+    assert np.count_nonzero(np.abs(rate_c_per_s) > measurable_rate_c_per_s) > GRID_POINTS
 
     # A periodic heat equation has no net source: the mean temperature is conserved.
     assert np.mean(updated) == pytest.approx(np.mean(temperature), abs=1e-9)
