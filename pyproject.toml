@@ -1,0 +1,65 @@
+[project]
+name = "bilt-gt4py-integration-demo"
+version = "0.1.0"
+description = "A small Bilt Cartesian-grid model evaluated using GT4Py Next."
+readme = "README.md"
+requires-python = ">=3.15"
+dependencies = [
+    "bilt>=0.2.0",
+    "gt4py[next]",
+    "numpy>=2.3.2",
+]
+
+[dependency-groups]
+dev = [
+    "prek>=0.5.7",
+    "pyrefly>=1.4.0",
+    "pytest>=9.2.0",
+    "ruff>=0.17.3",
+    "ty>=0.0.93",
+]
+
+[tool.uv]
+package = false
+
+[tool.uv.sources]
+bilt = { git = "https://github.com/aviation-impact-accelerator/bilt.git", branch = "main" }
+gt4py = { git = "https://github.com/j-emberton/gt4py.git", branch = "main" }
+
+[tool.pytest.ini_options]
+addopts = "--import-mode=importlib"
+testpaths = ["tests"]
+pythonpath = ["."]
+xfail_strict = true
+
+[tool.pyrefly]
+python_version = "3.15"
+search_path = ["."]
+
+[tool.ty.environment]
+extra-paths = ["."]
+
+[tool.ruff]
+line-length = 120
+target-version = "py315"
+
+[tool.ruff.format]
+docstring-code-format = true
+
+[tool.ruff.lint]
+select = ["ALL"]
+extend-select = ["PLR0917"]
+ignore = [
+    "ANN1", "COM812", "COM819", "CPY001", "D206", "D300", "E111", "E114", "E117",
+    "E501", "ISC001", "ISC002", "Q000", "Q001", "Q002", "Q003", "W191", "SIM300",
+]
+
+[tool.ruff.lint.isort]
+known-first-party = ["diffusion_demo", "gt4py_adapter"]
+
+[tool.ruff.lint.per-file-ignores]
+"diffusion_demo.py" = ["D103"]  # Bilt equations/transforms are self-describing.
+"tests/*.py" = ["D1", "FBT001", "INP001", "S101"]
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
