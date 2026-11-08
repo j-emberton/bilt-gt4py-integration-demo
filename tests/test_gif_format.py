@@ -16,4 +16,4 @@ def test_animation_gif_has_binary_extension_headers() -> None:
     start = 13 + colour_table_size
     assert gif[start : start + 3] == bytes.fromhex("21 ff 0b")
     assert gif[start + 3 : start + 14] == b"NETSCAPE2.0"
-    assert gif[-1] == 0x3B
+    assert gif.endswith(b";")
