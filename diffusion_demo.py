@@ -3,7 +3,7 @@
 from typing import Annotated
 
 import numpy as np
-from bilt import Implementation, Interface, Quantity, Tensor, equation, field, system, tensor, transform
+from bilt import Implementation, Interface, Quantity, QuantityTensor, equation, field, system, tensor, transform
 from bilt.units import kelvin, meter
 from bilt.units.dimensions import LENGTH, TEMPERATURE
 
@@ -11,8 +11,8 @@ from gt4py_adapter import x, y
 
 Length = Annotated[Quantity, LENGTH]
 InverseArea = Annotated[Quantity, LENGTH**-2]
-TemperatureDifference = Annotated[Tensor, TEMPERATURE]
-TemperatureLaplacian = Annotated[Tensor, TEMPERATURE / LENGTH**2]
+TemperatureDifference = Annotated[QuantityTensor, TEMPERATURE]
+TemperatureLaplacian = Annotated[QuantityTensor, TEMPERATURE / LENGTH**2]
 
 
 @system

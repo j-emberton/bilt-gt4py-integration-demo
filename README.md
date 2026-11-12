@@ -4,7 +4,7 @@ A small proof of concept combining [Bilt](https://github.com/aviation-impact-acc
 
 ## Examples
 
-Run on Python 3.15 with [uv](https://docs.astral.sh/uv/):
+Run with Bilt 0.3.0 and Python 3.15 using [uv](https://docs.astral.sh/uv/):
 
 ```sh
 uv sync --locked
@@ -54,10 +54,11 @@ This remains a two-dimensional CPU proof of concept, not a general GT4Py backend
 
 ## Validation
 
-Tests compare the GT4Py-computed field against an **independent NumPy finite-difference implementation** over the full grid, including reversed axes, periodic boundaries, uniform and seeded random fields, and the steel-plate initial rate. Tests also check conversion from centimetres/millimetres to metres and the output's physical units. GitHub Actions runs pytest, Ruff, Pyrefly, ty and prek on macOS and Ubuntu.
+Tests compare the GT4Py-computed field against an **independent NumPy finite-difference implementation** over the full grid, including reversed axes, periodic boundaries, uniform and seeded random fields, and the steel-plate initial rate. Tests also check conversion from centimetres/millimetres to metres and the output's physical units. GitHub Actions runs pytest, `bilt check`, Ruff, Pyrefly, ty and prek on macOS and Ubuntu. The system ports use Bilt 0.3.0's `QuantityTensor` annotations for unit-bearing array values, while scalar parameters use `Quantity`.
 
 ```sh
 uv run pytest -q
+uv run bilt check .
 uv run ruff check .
 uv run ruff format --check .
 uv run pyrefly check
@@ -65,4 +66,4 @@ uv run ty check
 uv run prek run --all-files
 ```
 
-Dependencies use Bilt `main` and the [Python 3.15 GT4Py fork](https://github.com/j-emberton/gt4py), recorded in `uv.lock`.
+Dependencies use Bilt `main` (currently Bilt 0.3.0) and the [Python 3.15 GT4Py fork](https://github.com/j-emberton/gt4py), recorded in `uv.lock`. Run `uv lock --upgrade-package bilt` to refresh the Bilt revision.

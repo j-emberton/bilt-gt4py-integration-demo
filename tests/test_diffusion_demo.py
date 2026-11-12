@@ -2,7 +2,7 @@
 
 import numpy as np
 import pytest
-from bilt import tensor
+from bilt import QuantityTensor, tensor
 from bilt.errors import BiltInputDimensionalityError
 from bilt.units import centimeter, kelvin, meter, millimeter, second
 
@@ -44,6 +44,7 @@ def test_periodic_laplacian_matches_numpy(
     with implementation:
         result = model.laplacian
 
+    assert isinstance(result, QuantityTensor)
     expected = reference_laplacian(values, dx=2.0, dy=1.0)
     np.testing.assert_allclose(result.values, expected.T if reverse_axes else expected)
     assert result.unit == kelvin / meter**2

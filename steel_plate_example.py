@@ -3,7 +3,7 @@
 from typing import Annotated
 
 import numpy as np
-from bilt import Implementation, Interface, Quantity, Tensor, equation, field, system, tensor
+from bilt import Implementation, Interface, Quantity, QuantityTensor, equation, field, system, tensor
 from bilt.units import absolute_celsius, meter, second
 from bilt.units.dimensions import ABSOLUTE, LENGTH, TEMPERATURE, TIME
 
@@ -12,10 +12,10 @@ from diffusion_demo import implementation as laplacian_implementation
 from gt4py_adapter import x, y
 
 AbsoluteTemperature = Annotated[Quantity, TEMPERATURE, ABSOLUTE]
-AbsoluteTemperatureField = Annotated[Tensor, TEMPERATURE, ABSOLUTE]
+AbsoluteTemperatureField = Annotated[QuantityTensor, TEMPERATURE, ABSOLUTE]
 ThermalDiffusivity = Annotated[Quantity, LENGTH**2 / TIME]
 Duration = Annotated[Quantity, TIME]
-TemperatureRate = Annotated[Tensor, TEMPERATURE / TIME]
+TemperatureRate = Annotated[QuantityTensor, TEMPERATURE / TIME]
 
 GRID_POINTS = 81
 DX_M = 0.006

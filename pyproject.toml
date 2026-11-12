@@ -5,7 +5,7 @@ description = "A small Bilt Cartesian-grid model evaluated using GT4Py Next."
 readme = "README.md"
 requires-python = ">=3.15"
 dependencies = [
-    "bilt>=0.2.0",
+    "bilt>=0.3.0",
     "gt4py[next]",
     "numpy>=2.3.2",
 ]
