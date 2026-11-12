@@ -47,8 +47,8 @@ wheels = [
 
 [[package]]
 name = "bilt"
-version = "0.2.0"
-source = { git = "https://github.com/aviation-impact-accelerator/bilt.git?branch=main#361f589dbe74f05b57abd12d8bd9abc7e19873d4" }
+version = "0.3.0"
+source = { git = "https://github.com/aviation-impact-accelerator/bilt.git?branch=main#ccd55f4730723dfbf5869fd76f2b1b02008b307e" }
 dependencies = [
     { name = "networkx" },
     { name = "rustworkx" },

@@ -2,7 +2,7 @@
 
 import numpy as np
 import pytest
-from bilt import Quantity, tensor
+from bilt import Quantity, QuantityTensor, tensor
 from bilt.errors import BiltInputDimensionalityError
 from bilt.units import absolute_celsius, absolute_kelvin, kelvin, meter, second
 
@@ -66,6 +66,9 @@ def test_heat_equation_and_step_are_model_relationships() -> None:
     expected_laplacian = x_curvature + y_curvature
     expected_rate = thermal_diffusivity * expected_laplacian
 
+    assert isinstance(laplacian, QuantityTensor)
+    assert isinstance(temperature_rate, QuantityTensor)
+    assert isinstance(next_temperature, QuantityTensor)
     assert laplacian.unit == kelvin / meter**2
     # Subtracting absolute kelvin readings amplifies roundoff in the second derivative.
     np.testing.assert_allclose(laplacian.values, expected_laplacian, rtol=1e-10, atol=1e-8)

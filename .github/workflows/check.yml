@@ -33,6 +33,8 @@ jobs:
         run: uv run --no-sync pyrefly check
       - name: ty
         run: uv run --no-sync ty check
+      - name: Validate Bilt models
+        run: uv run --no-sync bilt check .
       - name: Tests
         run: uv run --no-sync pytest -q
       - name: Run impulse example
